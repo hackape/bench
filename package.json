@@ -1,0 +1,16 @@
+{
+  "name": "@hackape/bench",
+  "version": "0.0.1",
+  "main": "lib/run.js",
+  "author": "hackape <v@hackape.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@thi.ng/bench": "^2.0.21"
+  },
+  "devDependencies": {
+    "@types/node": "^14.11.2"
+  },
+  "bin": {
+    "bench": "bin/run"
+  }
+}
