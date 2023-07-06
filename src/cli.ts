@@ -1,18 +1,22 @@
-// @ts-check
-const path = require("path");
-const readline = require("readline");
-const { benchmark } = require("@thi.ng/bench");
+import * as path from "path";
+import * as readline from "readline";
+import { benchmark } from "./benchmark";
 
 const backspace = () => readline.moveCursor(process.stdout, -1, 0);
 
-const config = {
-  iter: 1000,
+const config: BenchConfig = {
+  iter: 1,
   warmup: 50,
   sample: 50,
   verbose: false,
 };
 
-function _loadTestCase(acc, filepath, testcase, index) {
+function _loadTestCase(
+  acc: TestCase[],
+  filepath: string,
+  testcase: TestCase | TestCase[],
+  index?: number
+) {
   if (Array.isArray(testcase)) {
     testcase.forEach((testcase, index) => {
       _loadTestCase(acc, filepath, testcase, index);
@@ -47,17 +51,17 @@ function loadTestCases() {
 
       const testcase = require(filepath);
       return _loadTestCase(acc, filepath, testcase);
-    }, []);
+    }, [] as TestCase[]);
   } catch (e) {
     console.error(e.message);
     process.exit(1);
   }
 }
 
-function sleep(ms) {
-  var resolve;
+function sleep(ms: number) {
+  let resolve: () => void;
   const p = new Promise((r) => (resolve = r));
-  setTimeout(resolve, ms);
+  setTimeout(resolve!, ms);
   return p;
 }
 
@@ -68,7 +72,7 @@ function spinnerFactory() {
   return () => spinner[spinnerCount++ % spinnerLen];
 }
 
-function logHeaderFactory(title, verbose) {
+function logHeaderFactory(title: string, verbose: boolean) {
   if (verbose) {
     let done = false;
     return () => {
@@ -79,7 +83,7 @@ function logHeaderFactory(title, verbose) {
   } else {
     const spin = spinnerFactory();
     let init = false;
-    return (end) => {
+    return (end?: boolean) => {
       if (end) {
         backspace();
         process.stdout.write(" \n");
@@ -103,7 +107,7 @@ async function main() {
     const logHeader = logHeaderFactory(testcase.title, config.verbose);
     while (sampleIndex < config.sample) {
       logHeader();
-      runSample(testcase, sampleIndex++, config);
+      await runSample(testcase, sampleIndex++, config);
       global.gc();
     }
     logHeader(true);
@@ -122,7 +126,7 @@ async function main() {
   getReport(testcases);
 }
 
-function getReport(testcases) {
+function getReport(testcases: TestCase[]) {
   testcases.sort((a, b) => b.stat.avg - a.stat.avg);
   const fastest = testcases[0];
   testcases.forEach((testcase) => {
@@ -142,7 +146,7 @@ function getReport(testcases) {
   });
 }
 
-function getOpsStat(_ops) {
+function getOpsStat(_ops: number[]) {
   const ops = _ops.slice();
   // remove the highest and lowest results:
   ops.sort();
@@ -163,9 +167,9 @@ function getOpsStat(_ops) {
   return stat;
 }
 
-function runSample(testcase, i, config) {
+async function runSample(testcase: TestCase, i: number, config: BenchConfig) {
   if (config.verbose) process.stdout.write(`[${i + 1}] ${testcase.title}...`);
-  const result = benchmark(testcase.run, {
+  const result = await benchmark(testcase.run, {
     title: testcase.title,
     warmup: config.warmup,
     iter: config.iter,
@@ -184,3 +188,23 @@ function runSample(testcase, i, config) {
 }
 
 main();
+
+type TestCase = {
+  title: string;
+  run: () => any;
+  filepath: string;
+  ops: number[];
+  stat: {
+    avg: number;
+    min: number;
+    max: number;
+  };
+  lag: number;
+};
+
+type BenchConfig = {
+  iter: number;
+  warmup: number;
+  sample: number;
+  verbose: boolean;
+};

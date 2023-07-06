@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "outDir": "lib",
+    "target": "ESNext",
+    "importHelpers": true,
+    "moduleResolution": "node",
+    "module": "commonjs",
+    "experimentalDecorators": true,
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "preserveConstEnums": true,
+
+    "strict": true,
+    "strictNullChecks": true
+  },
+  "include": ["./src/**/*.ts"]
+}
